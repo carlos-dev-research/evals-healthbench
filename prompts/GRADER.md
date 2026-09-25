@@ -7,7 +7,7 @@ Conversation:
 
 ---
 
-Fina Response to evaluate:
+Final Response to evaluate:
 {completion}
 
 Criterion:

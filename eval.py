@@ -109,7 +109,7 @@ def get_result(ans: str) -> dict:
         if found and acc == 0:
             candidate = ans[start:i + 1]
             try:
-                return json.loads(candidate)
+                return json.loads(candidate, strict=False)
             except json.JSONDecodeError:
                 found = False  # reset and keep scanning for another candidate
                 continue
@@ -119,28 +119,49 @@ def get_result(ans: str) -> dict:
 
 
 
-def grade(model:str, temperature:int, completion:dict, record:HeathBenchRecord):
+def grade(model:str, temperature:int, completion:str, record:HeathBenchRecord):
     with open('./prompts/GRADER.md','r') as f:
         template = f.read()
     grades = []
     rubrics = record.rubrics
 
 
-    prompt = "\n\n".join([f"{x.get('role')}\n{x.get('content')}"])
+    prompt = "\n\n".join([f"{x.get('role')}\n{x.get('content')}" for x in record.prompt])
+
     for rubric in rubrics:
         grader_prompt = template.format(prompt=prompt, completion=completion, criterion=rubric.criterion)
         ans = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": grader_prompt}],
-            temperature=temperature
+            temperature=temperature,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "grading_result",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "explanation": {"type": "string"},
+                            "criteria_met": {"type": "boolean"}
+                        },
+                        "required": ["explanation", "criteria_met"],
+                        "additionalProperties": False
+                    }
+                }
+            }
         ).choices[0].message.content
         grade = get_result(ans)
         grade['prompt_id'] = record.prompt_id
+        grade['points'] = rubric.points
         grades.append(grade)
 
-    print(grades)
+    report = {
+        "prompt": record.prompt,
+        "completion": completion,
+        "rubrics": grades
+        }
 
-    return grades
+    return report
         
 
 
@@ -157,10 +178,9 @@ with open(DATASET, "r") as f:
                 messages=x.prompt,
                 temperature=0.3
             ).choices[0].message.content
-            print("Response\n\n----------\n",completion)
-            grades = grade("ministral-3:8b", 0.3, completion, x)
+            report = grade("ministral-3:8b", 0.3, completion, x)
             with open('./tmp.json','w') as f:
-                json.dump(grades, f, indent=4 )
+                json.dump(report, f, indent=4 )
             #print(grades)
         except Exception as e:
             print(e)

@@ -6,6 +6,8 @@ Evals for Health Bench
 
 ```bash
 pip install huggingface_hub
+pip install jupyterlab
+pip install pandas
 ```
 
 ## Download dataset
