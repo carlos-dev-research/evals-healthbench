@@ -1,10 +1,10 @@
-from openai import OpenAI
+from openai import OpenAI, NOT_GIVEN
 import json
 from .models import *
 from .tools import *
 
 
-def grade_prompt(client:OpenAI, model:str, template:str, temperature:int, completion:str, record:HeathBenchRecord):
+def grade_prompt(client:OpenAI, model:str, r_grader:str, template:str, temperature:int, completion:str, record:HeathBenchRecord):
     
     grades = []
     rubrics = record.rubrics
@@ -18,6 +18,7 @@ def grade_prompt(client:OpenAI, model:str, template:str, temperature:int, comple
             model=model,
             messages=[{"role": "user", "content": grader_prompt}],
             temperature=temperature,
+            reasoning_effort= r_grader if r_grader in ["low","medium","high"] else NOT_GIVEN,
             response_format={
                 "type": "json_schema",
                 "json_schema": {
@@ -48,12 +49,13 @@ def grade_prompt(client:OpenAI, model:str, template:str, temperature:int, comple
     return report
         
 
-def grade(client:OpenAI, test_model:str, grader_model:str, template:str, line_record:str) ->str:
+def grade(client:OpenAI, test_model:str, r_test:str, grader_model:str, r_grader:str, template:str, line_record:str) ->str:
     record = HeathBenchRecord(line_record)
     completion = client.chat.completions.create(
         model=test_model,
         messages=record.prompt,
-        temperature=0.3
+        temperature=0.3,
+        reasoning_effort= r_test if r_test in ["low","medium","high"] else NOT_GIVEN
     ).choices[0].message.content
-    report = grade_prompt(client, grader_model, template, 0.3, completion, record)
+    report = grade_prompt(client, grader_model, r_grader, template, 0.3, completion, record)
     return json.dumps(report)

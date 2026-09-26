@@ -1,23 +1,41 @@
+# Initialize Environment
+from dotenv import load_dotenv
+load_dotenv()
+
+
+# Import libraries and dependencies
 from openai import OpenAI
 from datetime import datetime
 from pathlib import Path
+from tqdm import tqdm
+import os
 from pygrader import grade
 
-DATASET = "healthbench/2025-05-07-06-14-12_oss_eval.jsonl"
-BASE_URL = "http://localhost:11434/v1"
-API_KEY = "ollama"
-MODEL_TEST="ministral-3:8b"
-MODEL_GRADER="ministral-3:8b"
-FOLDER_NAME = "first_test"
+# Define parameters
+SAMPLES=10
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-
+DATASET = "healthbench/2025-05-07-06-14-12_oss_eval_N100.jsonl"
+FOLDER_NAME = f"test-{timestamp}"
+BASE_URL = os.getenv("BASE_URL")
+API_KEY = os.getenv("API_KEY")
+MODEL_TEST=os.getenv("MODEL_TEST")
+MODEL_GRADER= os.getenv("MODEL_GRADER")
+RESONING_TEST=os.getenv("RESONING_TEST")  # low | medium | high | None
+RESONING_GRADER=os.getenv("RESONING_GRADER") # low | medium | high | None
 
 # 1. Create Description File for metadata
-description = f"""TEST RUN DESCRIPTION
+description = f"""# TEST RUN DESCRIPTION
+
 Dataset: {DATASET}
+
 Model Evaluated: {MODEL_TEST}
+
+Model Evaluated Reasoning Effort: {RESONING_TEST}
+
 Model Grader: {MODEL_GRADER}
+
+Model Grader Reasoning Effort: {RESONING_GRADER}
+
 Timestamp: {timestamp}
 """
 
@@ -41,19 +59,13 @@ with open('GRADER.md','r') as f:
 # 4. Load and evaluate dataset
 with open(DATASET, "r") as f:
     acc = 0
-    for line in f:
-        acc += 1
-        report_line = grade(client, MODEL_TEST, MODEL_GRADER, template, line)
+    for line in tqdm(f, desc="Evaluation Model"):
+        report_line = grade(client, MODEL_TEST,RESONING_TEST, MODEL_GRADER, RESONING_GRADER, template, line)
         with open(folder / "results.jsonl", "a") as fa:
-            fa.write(f"\n{report_line}")
-        if acc == 3:
-            break
+            if acc >0:
+                fa.write("\n")
+            fa.write(report_line)
+        acc += 1
+
 
 print("Report Finish")
-    
-
-
-
-
-
-
