@@ -221,3 +221,4 @@ __marimo__/
 # Exclude dataset from repo
 healthbench
 .vscode
+.DS_Store
