@@ -9,7 +9,7 @@ The harness talks to any **OpenAI-compatible API** (Groq, Ollama, vLLM, OpenAI, 
 Evaluated on random subsets of the HealthBench `oss_eval` split (sampled with `random_state=40`) to keep API costs down.
 
 | Run | Model under test | Grader | Reasoning effort (test / grader) | Conversations | Score |
-|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|
 | `test-2026-09-26_17-22-17` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | low / low | 100 | **0.531** |
 | `test-2026-09-27_11-11-57` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | low / low | 200 | **0.500** |
 
