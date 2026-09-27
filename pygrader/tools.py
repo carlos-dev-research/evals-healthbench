@@ -1,4 +1,6 @@
 import json
+import pandas as pd
+import numpy as np
 
 class JsonNotFoundError(Exception):
     """Raised when no valid JSON object could be found in the model's answer."""
@@ -31,3 +33,14 @@ def get_result(ans: str) -> dict:
                 continue
 
     raise JsonNotFoundError("No valid JSON object found in model answer")
+
+def get_score(row):
+    X = row['rubrics']
+    A = [int(xj.get("criteria_met")) * xj.get("points") for xj in X]
+    B = [max(0,xj.get("points")) for xj in X]
+    return sum(A)/sum(B)
+
+def calculate_score(results_file):
+    dx = pd.read_json(results_file, lines=True)
+    dx['score'] = dx.apply(get_score, axis=1)
+    return float(np.clip(dx.score.mean(),0,1))
